@@ -1,10 +1,8 @@
--- الخدمات
+-- خدمات
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
 local player = Players.LocalPlayer
 
--- تأكد من leaderstats.Credit
+-- التأكد من وجود leaderstats.Credit
 if not player:FindFirstChild("leaderstats") then
     local ls = Instance.new("Folder")
     ls.Name = "leaderstats"
@@ -18,15 +16,7 @@ if not player.leaderstats:FindFirstChild("Credit") then
     credit.Parent = player.leaderstats
 end
 
--- إنشاء RemoteEvent إذا لم يكن موجود
-local remote = ReplicatedStorage:FindFirstChild("AddCredits")
-if not remote then
-    remote = Instance.new("RemoteEvent")
-    remote.Name = "AddCredits"
-    remote.Parent = ReplicatedStorage
-end
-
--- إنشاء GUI
+-- === GUI ===
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "CreditGUI"
 screenGui.Parent = player:WaitForChild("PlayerGui")
@@ -79,37 +69,21 @@ successLabel.Font = Enum.Font.GothamBold
 successLabel.Text = ""
 successLabel.Parent = frame
 
--- تحديث النقاط في الوقت الفعلي
+-- تحديث عرض النقاط تلقائي
 player.leaderstats.Credit:GetPropertyChangedSignal("Value"):Connect(function()
     creditLabel.Text = "نقاطك: " .. player.leaderstats.Credit.Value
 end)
 
--- إرسال الرقم للسيرفر عند الضغط
+-- الضغط على زر استلام
 claimButton.MouseButton1Click:Connect(function()
     local amount = tonumber(amountBox.Text)
     if amount and amount > 0 then
-        remote:FireServer(amount)
+        player.leaderstats.Credit.Value = player.leaderstats.Credit.Value + amount
         amountBox.Text = ""
-        successLabel.Text = "تم إرسال النقاط!"
+        successLabel.Text = "تم إضافة " .. amount .. " نقطة!"
         task.delay(2, function() successLabel.Text = "" end)
     else
         successLabel.Text = "اكتب رقم صحيح"
         task.delay(2, function() successLabel.Text = "" end)
     end
 end)
-
--- ==== سيرفر داخلي: إنشاء Script تلقائي في ServerScriptService إذا لم يكن موجود ===
-if not ServerScriptService:FindFirstChild("AddCredits_ServerScript") then
-    local serverScript = Instance.new("Script")
-    serverScript.Name = "AddCredits_ServerScript"
-    serverScript.Parent = ServerScriptService
-    serverScript.Source = [[
-        local ReplicatedStorage = game:GetService("ReplicatedStorage")
-        local remote = ReplicatedStorage:WaitForChild("AddCredits")
-        remote.OnServerEvent:Connect(function(player, amount)
-            if player:FindFirstChild("leaderstats") and player.leaderstats:FindFirstChild("Credit") then
-                player.leaderstats.Credit.Value = player.leaderstats.Credit.Value + amount
-            end
-        end)
-    ]]
-end
