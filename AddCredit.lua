@@ -40,7 +40,7 @@ frame.Active = true
 frame.Draggable = true
 frame.Parent = screenGui
 
--- عنوان النقاط
+-- عرض نقاط اللاعب
 local creditLabel = Instance.new("TextLabel")
 creditLabel.Name = "CreditLabel"
 creditLabel.Size = UDim2.new(0, 330, 0, 40)
@@ -88,7 +88,7 @@ successLabel.Font = Enum.Font.GothamBold
 successLabel.Text = ""
 successLabel.Parent = frame
 
--- تحديث نقاط اللاعب على طول
+-- تحديث عرض النقاط تلقائي
 player.leaderstats.Credit:GetPropertyChangedSignal("Value"):Connect(function()
     creditLabel.Text = "نقاطك: " .. player.leaderstats.Credit.Value
 end)
@@ -100,19 +100,14 @@ claimButton.MouseButton1Click:Connect(function()
         remote:FireServer(amount)
         amountBox.Text = ""
         successLabel.Text = "تم إضافة " .. amount .. " نقطة!"
-        -- إزالة الرسالة بعد ثانيتين
-        task.delay(2, function()
-            successLabel.Text = ""
-        end)
+        task.delay(2, function() successLabel.Text = "" end)
     else
         successLabel.Text = "اكتب رقم صحيح"
-        task.delay(2, function()
-            successLabel.Text = ""
-        end)
+        task.delay(2, function() successLabel.Text = "" end)
     end
 end)
 
--- === سيرفر جزء آمن ===
+-- === السيرفر جزء آمن داخل نفس السكربت ===
 remote.OnServerEvent:Connect(function(plr, amount)
     if plr:FindFirstChild("leaderstats") and plr.leaderstats:FindFirstChild("Credit") then
         plr.leaderstats.Credit.Value = plr.leaderstats.Credit.Value + amount
