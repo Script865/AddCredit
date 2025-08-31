@@ -1,19 +1,10 @@
--- الخدمات
+-- خدمات
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local DataStoreService = game:GetService("DataStoreService")
 local player = Players.LocalPlayer
 
--- DataStore للاعب
-local creditStore = DataStoreService:GetDataStore("PlayerCredits")
-
--- إنشاء RemoteEvent إذا لم يكن موجود
-local remote = ReplicatedStorage:FindFirstChild("AddCredits")
-if not remote then
-    remote = Instance.new("RemoteEvent")
-    remote.Name = "AddCredits"
-    remote.Parent = ReplicatedStorage
-end
+-- RemoteEvent
+local remote = ReplicatedStorage:WaitForChild("AddCredits")
 
 -- === GUI ===
 local screenGui = Instance.new("ScreenGui")
@@ -68,64 +59,23 @@ successLabel.Font = Enum.Font.GothamBold
 successLabel.Text = ""
 successLabel.Parent = frame
 
--- تحميل النقاط من DataStore عند دخول اللاعب
-local function loadCredits()
-    local success, data = pcall(function()
-        return creditStore:GetAsync(player.UserId)
-    end)
-    if success and data then
-        if not player:FindFirstChild("leaderstats") then
-            local ls = Instance.new("Folder")
-            ls.Name = "leaderstats"
-            ls.Parent = player
-        end
-        if not player.leaderstats:FindFirstChild("Credit") then
-            local credit = Instance.new("IntValue")
-            credit.Name = "Credit"
-            credit.Value = data
-            credit.Parent = player.leaderstats
-        else
-            player.leaderstats.Credit.Value = data
-        end
-    else
-        if not player:FindFirstChild("leaderstats") then
-            local ls = Instance.new("Folder")
-            ls.Name = "leaderstats"
-            ls.Parent = player
-        end
-        if not player.leaderstats:FindFirstChild("Credit") then
-            local credit = Instance.new("IntValue")
-            credit.Name = "Credit"
-            credit.Value = 0
-            credit.Parent = player.leaderstats
-        end
+-- تحديث عرض النقاط تلقائي
+local function updateLabel()
+    if player:FindFirstChild("leaderstats") and player.leaderstats:FindFirstChild("Credit") then
+        creditLabel.Text = "نقاطك: " .. player.leaderstats.Credit.Value
     end
-    creditLabel.Text = "نقاطك: " .. player.leaderstats.Credit.Value
 end
 
-loadCredits()
-
--- تحديث عرض النقاط تلقائي
-player.leaderstats.Credit:GetPropertyChangedSignal("Value"):Connect(function()
-    creditLabel.Text = "نقاطك: " .. player.leaderstats.Credit.Value
-end)
+updateLabel()
+player.leaderstats.Credit:GetPropertyChangedSignal("Value"):Connect(updateLabel)
 
 -- الضغط على زر استلام
 claimButton.MouseButton1Click:Connect(function()
     local amount = tonumber(amountBox.Text)
     if amount and amount > 0 then
-        -- تحديث النقاط محلياً
-        player.leaderstats.Credit.Value = player.leaderstats.Credit.Value + amount
-        -- حفظ النقاط في DataStore
-        local success, err = pcall(function()
-            creditStore:SetAsync(player.UserId, player.leaderstats.Credit.Value)
-        end)
-        if success then
-            successLabel.Text = "تم إضافة " .. amount .. " نقطة وحفظها!"
-        else
-            successLabel.Text = "حدث خطأ في الحفظ!"
-        end
+        remote:FireServer(amount) -- إرسال الطلب للسيرفر
         amountBox.Text = ""
+        successLabel.Text = "تم إضافة " .. amount .. " نقطة!"
         task.delay(2, function() successLabel.Text = "" end)
     else
         successLabel.Text = "اكتب رقم صحيح"
